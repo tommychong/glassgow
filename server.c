@@ -25,11 +25,12 @@ int main (void){
     int stat = bind(s_fd, res->ai_addr, res->ai_addrlen);
 
     if (stat != 0){
-        printf("ERROR!\n");
+        printf("ERROR! Cannot bind to address\n");
     }
 
     listen(s_fd, MAX_QUEUE);
 
+    static const char* thing = "HTTP/1.0 200 OK\nContent-Length: 228\n\n<html><body>Helloworld<br/>Hello say the world<br/>Testing testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testing</body></html>\n";
     while(1) {
         char buf[9];
         buf[8] = '\0';
@@ -40,6 +41,9 @@ int main (void){
 //int readed = read(client_fd, buf, 8);
         recv(client_fd, buf, 8, 0);
         printf("Got msgs %s\n",buf);
+
+        send(client_fd, thing, strlen(thing), 0);
+        printf("What do?\n");
     }
 
     return 0;

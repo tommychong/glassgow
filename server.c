@@ -7,6 +7,15 @@
 
 #define MAX_QUEUE 20
 
+typedef enum {HTTP_1_0, HTTP_1_1} http_version;
+
+struct gg_http_response {
+    unsigned int response_code;
+    char *body;
+    //headers;
+    http_version version;
+};
+
 int main (void){
     struct sockaddr_storage client_addr;
     struct addrinfo hints, *res;

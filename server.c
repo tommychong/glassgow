@@ -72,7 +72,7 @@ int main (void){
         printf("%s",send_buf);
 
         send(client_fd, send_buf, strlen(send_buf), 0);
-        printf("What do?\n");
+        free(send_buf);
     }
 
     return 0;

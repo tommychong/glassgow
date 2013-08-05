@@ -4,6 +4,7 @@
 //#include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define MAX_QUEUE 20
 
@@ -15,6 +16,15 @@ struct gg_http_response {
     //headers;
     http_version version;
 };
+
+char* marshall_response (struct gg_http_response *response){
+    char *buffer = (char*) malloc(4096);
+    char *cursor = buffer;
+    int msg_len = strlen(response->body);
+    sprintf(buffer, "HTTP/1.0 200 OK\r\nContent-Length: %d\r\n\r\n%s\r\n", msg_len, response->body);
+
+    return buffer;
+}
 
 int main (void){
     struct sockaddr_storage client_addr;
@@ -35,23 +45,33 @@ int main (void){
 
     if (stat != 0){
         printf("ERROR! Cannot bind to address\n");
+        return -1;
     }
 
     listen(s_fd, MAX_QUEUE);
+    printf("Server active on port 8001.\n");
 
-    static const char* thing = "HTTP/1.0 200 OK\nContent-Length: 228\n\n<html><body>Helloworld<br/>Hello say the world<br/>Testing testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testing</body></html>\n";
+    static char* thang = "<html><body>Helloworld<br/>Hello say the world<br/>Testing testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testing Coconut</body></html>";
+    static char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination</body></html>";
+
     while(1) {
-        char buf[9];
-        buf[8] = '\0';
+        char buf[4096];
         socklen_t sin_size = sizeof client_addr;
         int client_fd = accept(s_fd, (struct sockaddr *)&client_addr, &sin_size);
         printf("Accepted\n");
 
 //int readed = read(client_fd, buf, 8);
-        recv(client_fd, buf, 8, 0);
-        printf("Got msgs %s\n",buf);
+        unsigned int recv_size = recv(client_fd, buf, 4096, 0);
+        buf[recv_size] = '\0';
+        printf("Got msg\r\nsize:%d\r\n%s\r\n",recv_size, buf);
 
-        send(client_fd, thing, strlen(thing), 0);
+        struct gg_http_response resp;
+        resp.body = thug;
+
+        char *send_buf = marshall_response(&resp);
+        printf("%s",send_buf);
+
+        send(client_fd, send_buf, strlen(send_buf), 0);
         printf("What do?\n");
     }
 

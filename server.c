@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #define MAX_QUEUE 20
+#define RECEIVE_BUFFER_SIZE 4096
 
 typedef enum {HTTP_1_0, HTTP_1_1} http_version;
 
@@ -51,19 +52,22 @@ int main (void){
     listen(s_fd, MAX_QUEUE);
     printf("Server active on port 8001.\n");
 
-    static char* thang = "<html><body>Helloworld<br/>Hello say the world<br/>Testing testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testingTesting testing testing testing Coconut</body></html>";
-    static char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination</body></html>";
+    static char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination Extreme edition</body></html>";
 
     while(1) {
-        char buf[4096];
+        char buf[RECEIVE_BUFFER_SIZE];
         socklen_t sin_size = sizeof client_addr;
         int client_fd = accept(s_fd, (struct sockaddr *)&client_addr, &sin_size);
         printf("Accepted\n");
 
-//int readed = read(client_fd, buf, 8);
-        unsigned int recv_size = recv(client_fd, buf, 4096, 0);
+        int recv_size = recv(client_fd, buf, RECEIVE_BUFFER_SIZE-1, 0);
+
+        if (recv_size < 0){
+            printf("Error! Could not receive packet from port\n");
+        }
+
         buf[recv_size] = '\0';
-        printf("Got msg\r\nsize:%d\r\n%s\r\n",recv_size, buf);
+        printf("Got msg\r\nsize:%d\r\n%s\r\n", recv_size, buf);
 
         struct gg_http_response resp;
         resp.body = thug;

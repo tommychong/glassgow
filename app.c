@@ -23,11 +23,13 @@ void file_handler() {
 */
 
 //void gg_file_handler(Request* request, Response* response) {
-void gg_file_handler(){
+void gg_file_handler(ggHttpResponse* response){
 }
 
 //void gg_null_handler(Request* request, Response* response) {
-void gg_null_handler(){
+void gg_null_handler(ggHttpResponse* response){
+    static char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination Extreme edition</body></html>";
+    response->body = thug;
 }
 
 

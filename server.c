@@ -11,11 +11,6 @@
 
 typedef enum {GET, POST, PUT, DELETE} GG_HTTP_METHODS;
 
-typedef struct {
-    char *string;
-    void *handler;
-} RouteEntry;
-
 typedef enum {HTTP_1_0, HTTP_1_1} http_version;
 
 typedef struct ggHttpResponse {
@@ -24,6 +19,12 @@ typedef struct ggHttpResponse {
     //headers;
     http_version version;
 } ggHttpResponse;
+
+typedef struct {
+    char *string;
+    void (*handler)(ggHttpResponse*);
+} RouteEntry;
+
 
 char* marshall_response (ggHttpResponse *response){
     char *buffer = (char*) malloc(4096);
@@ -34,7 +35,7 @@ char* marshall_response (ggHttpResponse *response){
     return buffer;
 }
 
-void server_app(RouteEntry* route) {
+int server_app (RouteEntry* routes) {
     struct sockaddr_storage client_addr;
     struct addrinfo hints, *res;
     int s_fd = 0;
@@ -52,13 +53,11 @@ void server_app(RouteEntry* route) {
 
     if (stat != 0){
         printf("ERROR! Cannot bind to address\n");
-        //return -1;
+        return -1;
     }
 
     listen(s_fd, MAX_QUEUE);
     printf("Server active on port 8001.\n");
-
-    static char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination Extreme edition</body></html>";
 
     while(1) {
         char buf[RECEIVE_BUFFER_SIZE];
@@ -76,8 +75,10 @@ void server_app(RouteEntry* route) {
         printf("Got msg\r\nsize:%d\r\n%s\r\n", recv_size, buf);
 
         struct ggHttpResponse resp;
-        resp.body = thug;
+        resp.response_code = 200;
+        //resp.body = thug;
 
+        routes[1].handler(&resp);
         char *send_buf = marshall_response(&resp);
         printf("%s",send_buf);
 
@@ -85,5 +86,5 @@ void server_app(RouteEntry* route) {
         free(send_buf);
     }
 
-    //return 0;
+    return 0;
 }

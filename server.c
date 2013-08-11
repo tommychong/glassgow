@@ -9,16 +9,23 @@
 #define MAX_QUEUE 20
 #define RECEIVE_BUFFER_SIZE 4096
 
+typedef enum {GET, POST, PUT, DELETE} GG_HTTP_METHODS;
+
+typedef struct {
+    char *string;
+    void *handler;
+} RouteEntry;
+
 typedef enum {HTTP_1_0, HTTP_1_1} http_version;
 
-struct gg_http_response {
+typedef struct ggHttpResponse {
     unsigned int response_code;
     char *body;
     //headers;
     http_version version;
-};
+} ggHttpResponse;
 
-char* marshall_response (struct gg_http_response *response){
+char* marshall_response (ggHttpResponse *response){
     char *buffer = (char*) malloc(4096);
     char *cursor = buffer;
     int msg_len = strlen(response->body);
@@ -27,11 +34,10 @@ char* marshall_response (struct gg_http_response *response){
     return buffer;
 }
 
-int main (void){
+void server_app(RouteEntry* route) {
     struct sockaddr_storage client_addr;
     struct addrinfo hints, *res;
     int s_fd = 0;
-
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
@@ -46,7 +52,7 @@ int main (void){
 
     if (stat != 0){
         printf("ERROR! Cannot bind to address\n");
-        return -1;
+        //return -1;
     }
 
     listen(s_fd, MAX_QUEUE);
@@ -69,7 +75,7 @@ int main (void){
         buf[recv_size] = '\0';
         printf("Got msg\r\nsize:%d\r\n%s\r\n", recv_size, buf);
 
-        struct gg_http_response resp;
+        struct ggHttpResponse resp;
         resp.body = thug;
 
         char *send_buf = marshall_response(&resp);
@@ -79,5 +85,5 @@ int main (void){
         free(send_buf);
     }
 
-    return 0;
+    //return 0;
 }

@@ -24,6 +24,7 @@ void file_handler() {
 
 //void gg_file_handler(Request* request, Response* response) {
 void gg_file_handler(ggHttpResponse* response){
+    response->body ="helloworld";
 }
 
 //void gg_null_handler(Request* request, Response* response) {
@@ -31,7 +32,6 @@ void gg_null_handler(ggHttpResponse* response){
     static char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination Extreme edition</body></html>";
     response->body = thug;
 }
-
 
 int main(void) {
     RouteEntry routes[] = {
@@ -41,6 +41,7 @@ int main(void) {
     server_app(routes);
     //gg_app app = server_app(routes);
     //app.listen(8001);
+    //gg_app_listen(app);
 
     return 0;
 }

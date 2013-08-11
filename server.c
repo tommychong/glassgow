@@ -20,8 +20,8 @@ typedef struct ggHttpResponse {
     http_version version;
 } ggHttpResponse;
 
-typedef struct {
-    char *string;
+typedef struct RouteEntry {
+    char* route_pattern;
     void (*handler)(ggHttpResponse*);
 } RouteEntry;
 
@@ -76,9 +76,17 @@ int server_app (RouteEntry* routes) {
 
         struct ggHttpResponse resp;
         resp.response_code = 200;
-        //resp.body = thug;
 
-        routes[1].handler(&resp);
+        //int n = sizeof(routes)/ sizeof(RouteEntry);
+        int n = 2;
+        for (int i=0; i<n; i++) {
+            if(1){
+                printf("%d of %d\n",i,n);
+                routes[i].handler(&resp);
+                break;
+            }
+        }
+
         char *send_buf = marshall_response(&resp);
         printf("%s",send_buf);
 

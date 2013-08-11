@@ -1,6 +1,6 @@
 #include "server.c"
 
-/*
+
 unsigned long get_file_length (FILE *file){
     unsigned long length;
 
@@ -11,20 +11,20 @@ unsigned long get_file_length (FILE *file){
     return length;
 }
 
-void file_handler() {
-    FILE *file;
-    char *buffer;
-    unsigned long fileBytes;
-
-    file = fopen(path, "rb");
-    fileBytes = get_file_length(file);
-    buffer = (char *) malloc(fileBytes + 2048);
-}
-*/
-
 //void gg_file_handler(Request* request, Response* response) {
 void gg_file_handler(ggHttpResponse* response){
-    response->body ="helloworld";
+    FILE *file;
+    char *buffer = (char*) malloc(2048);
+    unsigned long file_size;
+
+    file = fopen("index.html", "rb");
+    file_size= get_file_length(file);
+
+    fread(buffer, file_size, 1, file);
+    buffer[file_size] = '\0';
+    fclose(file);
+
+    response->body = buffer;
 }
 
 //void gg_null_handler(Request* request, Response* response) {

@@ -1,6 +1,5 @@
 #include "server.c"
 
-
 unsigned long get_file_length (FILE *file){
     unsigned long length;
 

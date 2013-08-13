@@ -1,10 +1,10 @@
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-//#include <arpa/inet.h>
-#include <netdb.h>
+#include <glib.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 #define MAX_QUEUE 20
 #define RECEIVE_BUFFER_SIZE 4096
@@ -12,6 +12,13 @@
 typedef enum {GET, POST, PUT, DELETE} GG_HTTP_METHODS;
 
 typedef enum {HTTP_1_0, HTTP_1_1} http_version;
+
+typedef struct ggHttpRequest {
+    char* path;
+    char* body;
+    //headers;
+    http_version version;
+} ggHttpRequest;
 
 typedef struct ggHttpResponse {
     unsigned int response_code;
@@ -35,7 +42,10 @@ char* marshall_response (ggHttpResponse *response){
     return buffer;
 }
 
-int server_app (RouteEntry* routes) {
+void parse_http_request(char *request_data, ggHttpRequest *request){
+}
+
+int server_app (RouteEntry *routes) {
     struct sockaddr_storage client_addr;
     struct addrinfo hints, *res;
     int s_fd = 0;
@@ -80,11 +90,18 @@ int server_app (RouteEntry* routes) {
         //int n = sizeof(routes)/ sizeof(RouteEntry);
         int n = 2;
         for (int i=0; i<n; i++) {
-            if(1){
-                printf("%d of %d\n",i,n);
+            //TODO: pre-compile the regexes before we start serving
+            GRegex *route_regex;
+            route_regex = g_regex_new(routes[i].route_pattern, 0, 0, NULL);
+
+            //TODO: Don't care about matches for now, but it'll be useful later for things like captured elements in URL
+            if(g_regex_match(route_regex, "/", 0, NULL)){
+                printf("Serving up handler for %s\n", routes[i].route_pattern);
                 routes[i].handler(&resp);
                 break;
             }
+
+            g_regex_unref(route_regex);
         }
 
         char *send_buf = marshall_response(&resp);

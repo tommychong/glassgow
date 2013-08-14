@@ -25,7 +25,7 @@ GString* marshall_response (ggHttpResponse *response){
     //TODO: what's the best default allocation size for the string?
     GString *response_string = g_string_sized_new(1024);
     
-    g_string_append_printf (response_string, "HTTP/1.0 %d %s\r\n", response->status, "OK");
+    g_string_append_printf (response_string, "HTTP/1.0 %d %s\r\n", response->status, gg_status_code_to_message(response->status));
 
     if (!gg_get_response_header(response, "Content-Length")) {
         gg_set_response_header_num(response, "Content-Length", msg_len);
@@ -40,10 +40,6 @@ GString* marshall_response (ggHttpResponse *response){
         g_string_append_printf (response_string, "%s: %s\r\n", key, value);
     }
 
-    /*sprintf(buffer, "HTTP/1.0 %d OK\r\n"
-                    "Content-Length: %d\r\n"
-                    "\r\n%s\r\n", response->status, msg_len, response->body);
-*/
     g_string_append(response_string, "\r\n");
      
     if (response->body_len >= 0) {
@@ -52,8 +48,6 @@ GString* marshall_response (ggHttpResponse *response){
         g_string_append(response_string, response->body);
         g_string_append(response_string, "\r\n");
     }
-
-    //g_string_append_printf(response_string, "\r\n%s\r\n", response->body);
 
     return response_string;
 }
@@ -113,7 +107,9 @@ int server_app (RouteEntry *routes, gchar *port) {
             if(g_regex_match(route_regex, request->uri, 0, &match_info)){
                 gchar *matched_segment = g_match_info_fetch(match_info ,1);
                 printf("Serving up handler for %s\n", routes[i].route_pattern);
+
                 routes[i].handler(resp, matched_segment);
+
                 g_free(matched_segment);
                 break;
             }

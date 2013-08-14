@@ -51,8 +51,8 @@ void gg_null_handler(ggHttpResponse* response, gchar *segment){ //TODO: there ha
 
 int main(int argc, char *argv[]) {
     RouteEntry routes[] = {
-                {"/(.+)", &gg_file_handler},
-                {"/", &gg_null_handler},
+                {"/(.+)", gg_file_handler},
+                {"/", gg_null_handler},
                 NULL
                 };
 

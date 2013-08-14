@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     RouteEntry routes[] = {
                 {"/(.+)", gg_file_handler},
                 {"/", gg_null_handler},
-                NULL
+                {NULL, NULL}
                 };
 
     gchar *port = "8001";

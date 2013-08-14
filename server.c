@@ -91,18 +91,18 @@ int server_app (RouteEntry *routes, gchar *port) {
         ggHttpResponse *resp = gg_http_response_new();
         resp->status = 200;
 
-        int n = 2;
-        for (int i=0; i<n; i++) {
+        for (RouteEntry *route = routes; route->route_pattern != NULL; route++) {
             //TODO: pre-compile the regexes before we start serving
             GRegex *route_regex;
-            route_regex = g_regex_new(routes[i].route_pattern, 0, 0, NULL);
+            route_regex = g_regex_new(route->route_pattern, 0, 0, NULL);
             GMatchInfo *match_info;
+            printf("dodeting %s\n", route->route_pattern);
 
             if(g_regex_match(route_regex, request->uri, 0, &match_info)){
                 gchar *matched_segment = g_match_info_fetch(match_info ,1);
-                printf("Serving up handler for %s\n", routes[i].route_pattern);
+                printf("Serving up handler for %s\n", route->route_pattern);
 
-                routes[i].handler(resp, matched_segment);
+                route->handler(resp, matched_segment);
 
                 g_free(matched_segment);
                 break;

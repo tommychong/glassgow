@@ -6,8 +6,10 @@ typedef struct ggHttpRequest {
     char* method;
     char* uri;
     char* body;
+    GHashTable* headers;
     //headers;
     //http_version version;
+
 } ggHttpRequest;
 
 int parse_http_request(char *data, ggHttpRequest *request) {
@@ -21,4 +23,21 @@ int parse_http_request(char *data, ggHttpRequest *request) {
     //g_strfreev();
 
     return 0;
+}
+
+void set_header(ggHttpRequest *request, gchar *key, gchar *value) {
+    g_hash_table_insert(request->headers, key, value);
+}
+
+ggHttpRequest* gg_http_request_new() {
+    ggHttpRequest *request = malloc(sizeof(ggHttpRequest));
+    request->headers = g_hash_table_new(g_str_hash, g_str_equal);
+
+    return request;
+}
+
+
+void gg_http_request_free(ggHttpRequest *request) {
+    //Free the headers
+    //free the request object itself
 }

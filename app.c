@@ -10,7 +10,6 @@ unsigned long get_file_length (FILE *file){
     return length;
 }
 
-//void gg_file_handler(Request* request, Response* response) {
 void gg_file_handler(ggHttpResponse* response, gchar *segment){
     FILE *file;
     char *buffer;
@@ -24,17 +23,22 @@ void gg_file_handler(ggHttpResponse* response, gchar *segment){
         return;
     }
 
-    file_size= get_file_length(file);
-    buffer = (char*) malloc(2048);
+    file_size = get_file_length(file);
+
+    printf("File SIZE: %lu\n", file_size);
+
+    buffer = (char*) malloc(file_size+1);
 
     fread(buffer, file_size, 1, file);
     buffer[file_size] = '\0';
     fclose(file);
 
+    gg_set_response_header_num(response, "Content-Length", (gint) file_size);
+    //gg_set_response_header(response, "Content-Type", "image/x-icon");
+
     response->body = buffer;
 }
 
-//void gg_null_handler(Request* request, Response* response) {
 void gg_null_handler(ggHttpResponse* response, gchar *segment){ //TODO: there has to be a nicer way to do this... printf style optional args?
     static char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination Extreme edition</body></html>";
     response->body = thug;

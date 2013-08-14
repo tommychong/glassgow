@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include "request.h"
 
 #define MAX_QUEUE 20
 #define RECEIVE_BUFFER_SIZE 4096
@@ -12,13 +13,6 @@
 typedef enum {GET, POST, PUT, DELETE} GG_HTTP_METHODS;
 
 typedef enum {HTTP_1_0, HTTP_1_1} http_version;
-
-typedef struct ggHttpRequest {
-    char* path;
-    char* body;
-    //headers;
-    http_version version;
-} ggHttpRequest;
 
 typedef struct ggHttpResponse {
     unsigned int response_code;
@@ -40,9 +34,6 @@ char* marshall_response (ggHttpResponse *response){
     sprintf(buffer, "HTTP/1.0 200 OK\r\nContent-Length: %d\r\n\r\n%s\r\n", msg_len, response->body);
 
     return buffer;
-}
-
-void parse_http_request(char *request_data, ggHttpRequest *request){
 }
 
 int server_app (RouteEntry *routes) {
@@ -84,6 +75,9 @@ int server_app (RouteEntry *routes) {
         buf[recv_size] = '\0';
         printf("Got msg\r\nsize:%d\r\n%s\r\n", recv_size, buf);
 
+        struct ggHttpRequest request;
+        parse_http_request(buf, &request);
+
         struct ggHttpResponse resp;
         resp.response_code = 200;
 
@@ -95,7 +89,7 @@ int server_app (RouteEntry *routes) {
             route_regex = g_regex_new(routes[i].route_pattern, 0, 0, NULL);
 
             //TODO: Don't care about matches for now, but it'll be useful later for things like captured elements in URL
-            if(g_regex_match(route_regex, "/", 0, NULL)){
+            if(g_regex_match(route_regex, request.uri, 0, NULL)){
                 printf("Serving up handler for %s\n", routes[i].route_pattern);
                 routes[i].handler(&resp);
                 break;

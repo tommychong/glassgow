@@ -34,7 +34,7 @@ void gg_null_handler(ggHttpResponse* response){
 
 int main(void) {
     RouteEntry routes[] = {
-                {"/favicon.ico", &gg_file_handler},
+                {"/(.+)", &gg_file_handler},
                 {"/", &gg_null_handler}
                };
     server_app(routes);

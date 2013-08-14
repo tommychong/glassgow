@@ -10,7 +10,7 @@ typedef struct ggHttpRequest {
     //http_version version;
 } ggHttpRequest;
 
-int parse_http_request(char* data, ggHttpRequest *request) {
+int parse_http_request(char *data, ggHttpRequest *request) {
     gchar **lines = g_strsplit(data, "\r\n", 0);
 
     //Request-Line   = Method SP Request-URI SP HTTP-Version CRLF

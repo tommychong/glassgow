@@ -15,7 +15,7 @@ typedef enum {GET, POST, PUT, DELETE} GG_HTTP_METHODS;
 typedef enum {HTTP_1_0, HTTP_1_1} http_version;
 
 typedef struct ggHttpResponse {
-    unsigned int response_code;
+    unsigned int status;
     char *body;
     //headers;
     http_version version;
@@ -26,12 +26,11 @@ typedef struct RouteEntry {
     void (*handler)(ggHttpResponse*, gchar*);
 } RouteEntry;
 
-
 char* marshall_response (ggHttpResponse *response){
     char *buffer = (char*) malloc(4096);
     char *cursor = buffer;
     int msg_len = strlen(response->body);
-    sprintf(buffer, "HTTP/1.0 200 OK\r\nContent-Length: %d\r\n\r\n%s\r\n", msg_len, response->body);
+    sprintf(buffer, "HTTP/1.0 %d OK\r\nContent-Length: %d\r\n\r\n%s\r\n", response->status, msg_len, response->body);
 
     return buffer;
 }
@@ -79,7 +78,7 @@ int server_app (RouteEntry *routes) {
         parse_http_request(buf, &request);
 
         struct ggHttpResponse resp;
-        resp.response_code = 200;
+        resp.status = 200;
 
         //int n = sizeof(routes)/ sizeof(RouteEntry);
         int n = 2;

@@ -20,6 +20,7 @@ void gg_file_handler(ggHttpResponse* response, gchar *segment){
     file = fopen(segment, "rb");
     if(!file) {
         response->body = "This should be an actual 404!";
+        response->status = 404;
         return;
     }
 

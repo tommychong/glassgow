@@ -4,3 +4,6 @@ LDLIBS = $(shell pkg-config --libs glib-2.0)
 
 gg:
 	$(CC) $(CFLAGS) app.c -o app $(LDLIBS) 
+
+clean:
+	rm *.o

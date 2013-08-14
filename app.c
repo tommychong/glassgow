@@ -34,9 +34,10 @@ void gg_file_handler(ggHttpResponse* response, gchar *segment){
     fclose(file);
 
     gg_set_response_header_num(response, "Content-Length", (gint) file_size);
-    if (strstr(segment, "jpg")){
+    if (strstr(segment, "jpg")) {
         gg_set_response_header(response, "Content-Type", "image/jpeg");
-        //gg_set_response_header(response, "Content-Type", "image/x-icon");
+    } else if (strstr(segment, "ico")) {
+        gg_set_response_header(response, "Content-Type", "image/x-icon");
     }
 
     response->body = buffer;

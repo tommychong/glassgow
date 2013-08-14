@@ -60,7 +60,7 @@ int server_app (RouteEntry *routes) {
     hints.ai_flags = AI_PASSIVE;
 
     //Check for error
-    getaddrinfo(NULL, "8001", &hints, &res);
+    getaddrinfo(NULL, port, &hints, &res);
 
     s_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
     int stat = bind(s_fd, res->ai_addr, res->ai_addrlen);
@@ -71,7 +71,7 @@ int server_app (RouteEntry *routes) {
     }
 
     listen(s_fd, MAX_QUEUE);
-    printf("Server active on port 8001.\n");
+    printf("Glassgow started on port %s.\n", port);
 
     while(1) {
         char buf[RECEIVE_BUFFER_SIZE];

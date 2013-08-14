@@ -44,13 +44,18 @@ void gg_null_handler(ggHttpResponse* response, gchar *segment){ //TODO: there ha
     response->body = thug;
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
     RouteEntry routes[] = {
                 {"/(.+)", &gg_file_handler},
                 {"/", &gg_null_handler},
                 NULL
-               };
-    server_app(routes);
+                };
+
+    gchar *port = "8001";
+    if (argc == 2){
+        port = argv[1];
+    }
+    server_app(routes, port);
     //gg_app app = server_app(routes);
     //app.listen(8001);
     //gg_app_listen(app);

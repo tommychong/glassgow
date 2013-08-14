@@ -119,11 +119,14 @@ int server_app (RouteEntry *routes, gchar *port) {
         }
 
         GString *send_buf = marshall_response(resp);
-        printf("%s",send_buf->str);
+        printf("%s", send_buf->str);
 
         send(client_fd, send_buf->str, send_buf->len, 0);
         //TODO free request and response objects
         //free(send_buf);
+        g_string_free(send_buf, TRUE);
+        //gg_http_request_free(request);
+        gg_http_response_free(resp);
     }
 
     return 0;

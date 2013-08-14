@@ -18,7 +18,7 @@ void gg_file_handler(ggHttpResponse* response, gchar *segment){
     //Check if you can access with access() and also 404/500 on read error
     file = fopen(segment, "rb");
     if(!file) {
-        response->body = "This should be an actual 404!";
+        gg_write(response, "This should be an actual 404!");
         response->status = 404;
         return;
     }
@@ -27,7 +27,7 @@ void gg_file_handler(ggHttpResponse* response, gchar *segment){
 
     printf("File SIZE: %lu\n", file_size);
 
-    buffer = (char*) malloc(file_size+1);
+    buffer = (char*) malloc(file_size+1); //TODO: create a gg_malloc function that cleans up after response done
 
     fread(buffer, file_size, 1, file);
     buffer[file_size] = '\0';
@@ -40,13 +40,12 @@ void gg_file_handler(ggHttpResponse* response, gchar *segment){
         gg_set_response_header(response, "Content-Type", "image/x-icon");
     }
 
-    response->body = buffer;
-    response->body_len = file_size;
+    gg_write_len(response, buffer, file_size);
 }
 
 void gg_null_handler(ggHttpResponse* response, gchar *segment){ //TODO: there has to be a nicer way to do this... printf style optional args?
     static char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination Extreme edition</body></html>";
-    response->body = thug;
+    gg_write(response, thug);
 }
 
 int main(int argc, char *argv[]) {

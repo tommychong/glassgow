@@ -1,11 +1,10 @@
-#include "http-parser/http_parser.h"
 #include "stdio.h"
 #include <glib.h>
 
 typedef struct ggHttpRequest {
     char* method;
     char* uri;
-    char* body;
+    GString *body;
     gint body_len;
     GHashTable* headers;
     //headers;

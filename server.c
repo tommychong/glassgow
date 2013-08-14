@@ -21,13 +21,13 @@ typedef struct RouteEntry {
 } RouteEntry;
 
 GString* marshall_response (ggHttpResponse *response){
-    int msg_len = strlen(response->body);
     //TODO: what's the best default allocation size for the string?
     GString *response_string = g_string_sized_new(1024);
     
     g_string_append_printf (response_string, "HTTP/1.0 %d %s\r\n", response->status, gg_status_code_to_message(response->status));
 
     if (!gg_get_response_header(response, "Content-Length")) {
+        int msg_len = response->body->len;
         gg_set_response_header_num(response, "Content-Length", msg_len);
     }
 
@@ -41,13 +41,7 @@ GString* marshall_response (ggHttpResponse *response){
     }
 
     g_string_append(response_string, "\r\n");
-     
-    if (response->body_len >= 0) {
-        g_string_append_len(response_string, response->body, response->body_len);
-    } else {
-        g_string_append(response_string, response->body);
-        g_string_append(response_string, "\r\n");
-    }
+    g_string_append_len(response_string, response->body->str, response->body->len);
 
     return response_string;
 }

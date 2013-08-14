@@ -34,9 +34,13 @@ void gg_file_handler(ggHttpResponse* response, gchar *segment){
     fclose(file);
 
     gg_set_response_header_num(response, "Content-Length", (gint) file_size);
-    //gg_set_response_header(response, "Content-Type", "image/x-icon");
+    if (strstr(segment, "jpg")){
+        gg_set_response_header(response, "Content-Type", "image/jpeg");
+        //gg_set_response_header(response, "Content-Type", "image/x-icon");
+    }
 
     response->body = buffer;
+    response->body_len = file_size;
 }
 
 void gg_null_handler(ggHttpResponse* response, gchar *segment){ //TODO: there has to be a nicer way to do this... printf style optional args?

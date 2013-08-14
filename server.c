@@ -44,12 +44,21 @@ GString* marshall_response (ggHttpResponse *response){
                     "Content-Length: %d\r\n"
                     "\r\n%s\r\n", response->status, msg_len, response->body);
 */
-    g_string_append_printf(response_string, "\r\n%s\r\n", response->body);
+    g_string_append(response_string, "\r\n");
+     
+    if (response->body_len >= 0) {
+        g_string_append_len(response_string, response->body, response->body_len);
+    } else {
+        g_string_append(response_string, response->body);
+        g_string_append(response_string, "\r\n");
+    }
+
+    //g_string_append_printf(response_string, "\r\n%s\r\n", response->body);
 
     return response_string;
 }
 
-int server_app (RouteEntry *routes) {
+int server_app (RouteEntry *routes, gchar *port) {
     struct sockaddr_storage client_addr;
     struct addrinfo hints, *res;
     int s_fd = 0;

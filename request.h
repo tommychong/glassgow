@@ -6,6 +6,7 @@ typedef struct ggHttpRequest {
     char* method;
     char* uri;
     char* body;
+    gint body_len;
     GHashTable* headers;
     //headers;
     //http_version version;

@@ -23,7 +23,7 @@ typedef struct ggHttpResponse {
 
 typedef struct RouteEntry {
     char* route_pattern;
-    void (*handler)(ggHttpResponse*);
+    void (*handler)(ggHttpResponse*, gchar*);
 } RouteEntry;
 
 
@@ -87,14 +87,17 @@ int server_app (RouteEntry *routes) {
             //TODO: pre-compile the regexes before we start serving
             GRegex *route_regex;
             route_regex = g_regex_new(routes[i].route_pattern, 0, 0, NULL);
+            GMatchInfo *match_info;
 
-            //TODO: Don't care about matches for now, but it'll be useful later for things like captured elements in URL
-            if(g_regex_match(route_regex, request.uri, 0, NULL)){
+            if(g_regex_match(route_regex, request.uri, 0, &match_info)){
+                gchar *matched_segment = g_match_info_fetch(match_info ,1);
                 printf("Serving up handler for %s\n", routes[i].route_pattern);
-                routes[i].handler(&resp);
+                routes[i].handler(&resp, matched_segment);
+                g_free(matched_segment);
                 break;
             }
 
+            g_match_info_free(match_info);
             g_regex_unref(route_regex);
         }
 

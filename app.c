@@ -11,13 +11,20 @@ unsigned long get_file_length (FILE *file){
 }
 
 //void gg_file_handler(Request* request, Response* response) {
-void gg_file_handler(ggHttpResponse* response){
+void gg_file_handler(ggHttpResponse* response, gchar *segment){
     FILE *file;
-    char *buffer = (char*) malloc(2048);
+    char *buffer;
     unsigned long file_size;
 
-    file = fopen("index.html", "rb");
+    //Check if you can access with access() and also 404/500 on read error
+    file = fopen(segment, "rb");
+    if(!file) {
+        response->body = "This should be an actual 404!";
+        return;
+    }
+
     file_size= get_file_length(file);
+    buffer = (char*) malloc(2048);
 
     fread(buffer, file_size, 1, file);
     buffer[file_size] = '\0';
@@ -27,7 +34,7 @@ void gg_file_handler(ggHttpResponse* response){
 }
 
 //void gg_null_handler(Request* request, Response* response) {
-void gg_null_handler(ggHttpResponse* response){
+void gg_null_handler(ggHttpResponse* response, gchar *segment){ //TODO: there has to be a nicer way to do this... printf style optional args?
     static char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination Extreme edition</body></html>";
     response->body = thug;
 }
@@ -35,7 +42,8 @@ void gg_null_handler(ggHttpResponse* response){
 int main(void) {
     RouteEntry routes[] = {
                 {"/(.+)", &gg_file_handler},
-                {"/", &gg_null_handler}
+                {"/", &gg_null_handler},
+                NULL
                };
     server_app(routes);
     //gg_app app = server_app(routes);

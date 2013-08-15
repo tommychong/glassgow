@@ -34,8 +34,8 @@ void gg_set_response_header(ggHttpResponse *response, gchar *key, gchar *value) 
 }
 
 void gg_set_response_header_num(ggHttpResponse *response, gchar *key, gint value) {
-    gchar *value_string = (gchar*) malloc(32);
-    g_ascii_dtostr(value_string, 32, value);
+    gchar *value_string = (gchar*) malloc(64);
+    g_ascii_dtostr(value_string, 64, value);
     g_hash_table_insert(response->headers, g_strdup(key), value_string);
 }
 
@@ -43,6 +43,7 @@ ggHttpResponse* gg_http_response_new() {
     ggHttpResponse *response = malloc(sizeof(ggHttpResponse));
     response->headers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
     gg_set_response_header(response, "Server", "Glassgow/pre-alpha");
+    //gg_set_response_header(response, "Connection", "keep-alive");
 
     //TODO: what's the best default allocation size for buffer?
     response->body = g_string_sized_new(1024);
@@ -51,10 +52,7 @@ ggHttpResponse* gg_http_response_new() {
 }
 
 void gg_http_response_free(ggHttpResponse *response) {
-    //Free the headers; hrm, what to do about dynamically allocated values/keys?
     g_hash_table_destroy(response->headers);
-
     g_string_free(response->body, TRUE);
-
     free(response);
 }

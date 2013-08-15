@@ -44,6 +44,7 @@ void gg_file_handler(ggHttpResponse* response, gchar *segment){
     }
 
     gg_write_len(response, buffer, file_size);
+    free(buffer);
 }
 
 void gg_null_handler(ggHttpResponse* response, gchar *segment){ //TODO: there has to be a nicer way to do this... printf style optional args?

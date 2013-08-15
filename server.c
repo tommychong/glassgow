@@ -91,12 +91,13 @@ int server_app (RouteEntry *routes, gchar *port) {
         ggHttpResponse *resp = gg_http_response_new();
         resp->status = 200;
 
-        for (RouteEntry *route = routes; route->route_pattern != NULL; route++) {
+        gboolean handled = FALSE;
+        for (RouteEntry *route = routes; !handled && route->route_pattern != NULL; route++) {
             //TODO: pre-compile the regexes before we start serving
             GRegex *route_regex;
             route_regex = g_regex_new(route->route_pattern, 0, 0, NULL);
             GMatchInfo *match_info;
-            printf("dodeting %s\n", route->route_pattern);
+            //printf("dodeting %s\n", route->route_pattern);
 
             if(g_regex_match(route_regex, request->uri, 0, &match_info)){
                 gchar *matched_segment = g_match_info_fetch(match_info ,1);
@@ -105,7 +106,7 @@ int server_app (RouteEntry *routes, gchar *port) {
                 route->handler(resp, matched_segment);
 
                 g_free(matched_segment);
-                break;
+                handled = TRUE;
             }
 
             g_match_info_free(match_info);
@@ -116,11 +117,11 @@ int server_app (RouteEntry *routes, gchar *port) {
         printf("%s", send_buf->str);
 
         send(client_fd, send_buf->str, send_buf->len, 0);
-        //TODO free request and response objects
-        //free(send_buf);
+
         g_string_free(send_buf, TRUE);
-        //gg_http_request_free(request);
+        gg_http_request_free(request);
         gg_http_response_free(resp);
+        shutdown(client_fd, 2);
     }
 
     return 0;

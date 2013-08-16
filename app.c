@@ -44,11 +44,14 @@ void gg_file_handler(GGHttpResponse* response, gchar *segment){
         gg_set_response_header(response, "Content-Type", "text/html");
     } else if (strstr(segment, "jpg")) {
         gg_set_response_header(response, "Content-Type", "image/jpeg");
+    } else if (strstr(segment, "gif")) {
+        gg_set_response_header(response, "Content-Type", "image/gif");
     } else if (strstr(segment, "ico")) {
         gg_set_response_header(response, "Content-Type", "image/x-icon");
     }
 
     gg_write_len(response, buffer, file_size);
+
     free(buffer);
 }
 

@@ -106,7 +106,7 @@ static void client_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
 
     g_string_append_len (client->read_buffer, buf, recv_size);
 
-    printf("Got msg chunk\nsize:%d\nReceive buffer size: %lu, contents:\n%s\n", recv_size, client->read_buffer->len, client->read_buffer->str);
+    //printf("Got msg chunk\nsize:%d\nReceive buffer size: %lu, contents:\n%s\n", recv_size, client->read_buffer->len, client->read_buffer->str);
 
     char *header_terminator;
     while (header_terminator = strstr(client->read_buffer->str, "\r\n\r\n")) {
@@ -115,7 +115,7 @@ static void client_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
 
         truncate_buffer(client->read_buffer, header_terminator, 4);
 
-        printf("Trunc'd buffer!\nReceive buffer size: %lu, contents:\n%s\n", client->read_buffer->len, client->read_buffer->str);
+        //printf("Trunc'd buffer!\nReceive buffer size: %lu, contents:\n%s\n", client->read_buffer->len, client->read_buffer->str);
 
         GGHttpResponse *response = gg_http_response_new();
         response->status = 200;
@@ -143,8 +143,23 @@ static void client_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
 
         GString *send_buf = marshall_response(response);
 
-        int szz= send(client_fd, send_buf->str, send_buf->len, 0);
-        printf("SENT %d bytes!\n%s", szz, send_buf->str);
+        gulong total_sent = 0;
+        gulong remaining = send_buf->len;
+
+        do {
+            int bytes_sent = send(client_fd, send_buf->str + total_sent, remaining, 0);
+
+            if(bytes_sent == -1){
+                //Socket might not be ready to send stuff all the time, make good use of libev here somehow?
+                continue;
+            }
+
+            total_sent += bytes_sent;
+            remaining = send_buf->len - total_sent;
+            //printf("SENT %lu/%lu bytes! rem %lu\n", sent_size, send_buf->len, remaining);
+        } while (remaining);
+        //printf("COMPLETE SEND\n");
+
 
         g_string_free(send_buf, TRUE);
         gg_http_request_free(request);

@@ -24,8 +24,10 @@ void gg_file_handler(GGHttpResponse* response, gchar *segment){
 
     //Check if you can access with access() and also 404/500 on read error
     file = fopen(segment, "rb");
+
+    //TODO: check if its a directory, if its a directory...
     if(!file) {
-        gg_write(response, "This should be an actual 404!");
+        gg_write(response, "No resource here homie.");
         response->status = 404;
         return;
     }
@@ -49,6 +51,15 @@ void gg_file_handler(GGHttpResponse* response, gchar *segment){
     } else if (strstr(segment, "ico")) {
         gg_set_response_header(response, "Content-Type", "image/x-icon");
     }
+
+    GChecksum *checksum = g_checksum_new(G_CHECKSUM_SHA1);
+    g_checksum_update (checksum, (guchar*) buffer, file_size);
+
+    char checksum_string [64];
+    sprintf(checksum_string, "\"%s\"", g_checksum_get_string(checksum));
+    gg_set_response_header(response, "ETag", checksum_string);
+
+    g_checksum_free(checksum);
 
     gg_write_len(response, buffer, file_size);
 

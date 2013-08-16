@@ -1,3 +1,7 @@
+#include "server.h"
+#include "request.h"
+#include "response.h"
+
 #include <stdio.h>
 #include <glib.h>
 #include <string.h>
@@ -5,20 +9,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include "request.h"
-#include "response.h"
 
 #define MAX_QUEUE 20
 #define RECEIVE_BUFFER_SIZE 4096
-
-typedef enum {GET, POST, PUT, DELETE} GG_HTTP_METHODS;
-
-typedef enum {HTTP_1_0, HTTP_1_1} http_version;
-
-typedef struct RouteEntry {
-    char* route_pattern;
-    void (*handler)(ggHttpResponse*, gchar*);
-} RouteEntry;
 
 GString* marshall_response (ggHttpResponse *response){
     //TODO: what's the best default allocation size for the string?
@@ -46,7 +39,7 @@ GString* marshall_response (ggHttpResponse *response){
     return response_string;
 }
 
-int server_app (RouteEntry *routes, gchar *port) {
+int gg_server_app (RouteEntry *routes, gchar *port) {
     struct sockaddr_storage client_addr;
     struct addrinfo hints, *res;
     int s_fd = 0;
@@ -88,8 +81,8 @@ int server_app (RouteEntry *routes, gchar *port) {
         ggHttpRequest *request = gg_http_request_new();
         parse_http_request(buf, request);
 
-        ggHttpResponse *resp = gg_http_response_new();
-        resp->status = 200;
+        ggHttpResponse *response = gg_http_response_new();
+        response->status = 200;
 
         gboolean handled = FALSE;
         for (RouteEntry *route = routes; !handled && route->route_pattern != NULL; route++) {
@@ -103,7 +96,7 @@ int server_app (RouteEntry *routes, gchar *port) {
                 gchar *matched_segment = g_match_info_fetch(match_info ,1);
                 printf("Serving up handler for %s\n", route->route_pattern);
 
-                route->handler(resp, matched_segment);
+                route->handler(response, matched_segment);
 
                 g_free(matched_segment);
                 handled = TRUE;
@@ -113,14 +106,14 @@ int server_app (RouteEntry *routes, gchar *port) {
             g_regex_unref(route_regex);
         }
 
-        GString *send_buf = marshall_response(resp);
+        GString *send_buf = marshall_response(response);
         printf("%s", send_buf->str);
 
         send(client_fd, send_buf->str, send_buf->len, 0);
 
         g_string_free(send_buf, TRUE);
         gg_http_request_free(request);
-        gg_http_response_free(resp);
+        gg_http_response_free(response);
         shutdown(client_fd, 2);
     }
 

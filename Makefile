@@ -2,11 +2,22 @@ CC = clang
 CFLAGS = $(shell pkg-config --cflags glib-2.0)
 LDLIBS = $(shell pkg-config --libs glib-2.0)
 
-debug:
-	$(CC) $(CFLAGS) app.c -g -o app $(LDLIBS)
+OBJECTS = request.o response.o server.o app.o
 
-gg:
-	$(CC) $(CFLAGS) app.c -o app $(LDLIBS)
+gg: $(OBJECTS)
+	$(CC) $(CFLAGS) $(OBJECTS) -o app $(LDLIBS)
+
+app.o: app.c
+	$(CC) $(CFLAGS) -c app.c
+
+server.o: server.c
+	$(CC) $(CFLAGS) -c server.c
+
+resopnse.o: response.c
+	$(CC) $(CFLAGS) -c response.c
+
+request.o: request.c
+	$(CC) $(CFLAGS) -c request.c
 
 clean:
 	rm *.o

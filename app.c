@@ -1,4 +1,11 @@
-#include "server.c"
+#include "server.h"
+#include "response.h"
+#include "request.h"
+
+#include <glib.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 unsigned long get_file_length (FILE *file){
     unsigned long length;
@@ -48,8 +55,8 @@ void gg_file_handler(ggHttpResponse* response, gchar *segment){
 }
 
 void gg_null_handler(ggHttpResponse* response, gchar *segment){ //TODO: there has to be a nicer way to do this... printf style optional args?
-    static char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination Extreme edition</body></html>";
-    gg_write(response, thug);
+    static const char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination Extreme edition</body></html>";
+    gg_write(response, (char*) thug);
 }
 
 int main(int argc, char *argv[]) {
@@ -63,10 +70,8 @@ int main(int argc, char *argv[]) {
     if (argc == 2){
         port = argv[1];
     }
-    server_app(routes, port);
-    //gg_app app = server_app(routes);
-    //app.listen(8001);
-    //gg_app_listen(app);
+
+    gg_server_app(routes, port);
 
     return 0;
 }

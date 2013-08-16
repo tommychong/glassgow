@@ -21,6 +21,10 @@ typedef struct GGAppContext {
     RouteEntry *routes;
 } GGAppContext;
 
+enum {
+    WAITING_FOR_HEADERS
+} RequestParseState;
+
 /*
  * there isn't a way to pass context to libev callbacks, which only pass the watcher,
  * so we wrap the watcher with context
@@ -33,6 +37,7 @@ typedef struct ServerEvContext {
 
 typedef struct ClientEvContext{
     ev_io watcher;
+    GString *read_buffer;
     GGAppContext *app;
 } ClientEvContext;
 
@@ -72,6 +77,14 @@ static inline int set_non_blocking(int fd) {
     return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }     
 
+static inline void truncate_buffer (GString *buffer, gchar *term_point, guint len) {
+    *term_point = '\0';
+
+    //Relying on a bit of trickery here, strlen will get the length to truncate to,
+    //len will be any additional length we wish to strip off
+    g_string_erase(buffer, 0, strlen(buffer->str)+len);
+}
+
 static void client_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
     ClientEvContext *client = (ClientEvContext*) watcher;
     GGAppContext *app = client->app;
@@ -80,56 +93,64 @@ static void client_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
 
     char buf[RECEIVE_BUFFER_SIZE];
 
-    int recv_size = recv(client_fd, buf, RECEIVE_BUFFER_SIZE-1, 0);
+    int recv_size = recv(client_fd, buf, RECEIVE_BUFFER_SIZE, 0);
 
-    if (recv_size == 0) {
+    if (recv_size <= 0) {
         ev_io_stop(loop, watcher);
         shutdown(client_fd, 2);
-        free(watcher);
-        return;
-    } else if (recv_size < 0) {
-        printf("Error! Could not receive packet from port\n");
+        //TODO: abstract out to a free function later, once we have more stuff to actually free
+        g_string_free(client->read_buffer, TRUE);
+        free(client);
         return;
     }
 
-    buf[recv_size] = '\0';
-    printf("Got msg\r\nsize:%d\r\n%s\r\n", recv_size, buf);
+    g_string_append_len (client->read_buffer, buf, recv_size);
 
-    GGHttpRequest *request = gg_http_request_new();
-    parse_http_request(buf, request);
+    printf("Got msg chunk\nsize:%d\nReceive buffer size: %lu, contents:\n%s\n", recv_size, client->read_buffer->len, client->read_buffer->str);
 
-    GGHttpResponse *response = gg_http_response_new();
-    response->status = 200;
+    char *header_terminator;
+    while (header_terminator = strstr(client->read_buffer->str, "\r\n\r\n")) {
+        GGHttpRequest *request = gg_http_request_new();
+        parse_http_request(client->read_buffer->str, request);
 
-    gboolean handled = FALSE;
-    for (RouteEntry *route = app->routes; !handled && route->route_pattern != NULL; route++) {
-        //TODO: pre-compile the regexes before we start serving
-        GRegex *route_regex;
-        route_regex = g_regex_new(route->route_pattern, 0, 0, NULL);
-        GMatchInfo *match_info;
+        truncate_buffer(client->read_buffer, header_terminator, 4);
 
-        if(g_regex_match(route_regex, request->uri, 0, &match_info)){
-            gchar *matched_segment = g_match_info_fetch(match_info ,1);
-            printf("Serving up handler for %s\n", route->route_pattern);
+        printf("Trunc'd buffer!\nReceive buffer size: %lu, contents:\n%s\n", client->read_buffer->len, client->read_buffer->str);
 
-            route->handler(response, matched_segment);
+        GGHttpResponse *response = gg_http_response_new();
+        response->status = 200;
 
-            g_free(matched_segment);
-            handled = TRUE;
+        gboolean handled = FALSE;
+        for (RouteEntry *route = app->routes; !handled && route->route_pattern != NULL; route++) {
+            //TODO: pre-compile the regexes before we start serving
+            GRegex *route_regex;
+            route_regex = g_regex_new(route->route_pattern, 0, 0, NULL);
+            GMatchInfo *match_info;
+
+            if(g_regex_match(route_regex, request->uri, 0, &match_info)){
+                gchar *matched_segment = g_match_info_fetch(match_info ,1);
+                printf("Serving up handler for %s\n", route->route_pattern);
+
+                route->handler(response, matched_segment);
+
+                g_free(matched_segment);
+                handled = TRUE;
+            }
+
+            g_match_info_free(match_info);
+            g_regex_unref(route_regex);
         }
 
-        g_match_info_free(match_info);
-        g_regex_unref(route_regex);
+        GString *send_buf = marshall_response(response);
+
+        int szz= send(client_fd, send_buf->str, send_buf->len, 0);
+        printf("SENT %d bytes!\n%s", szz, send_buf->str);
+
+        g_string_free(send_buf, TRUE);
+        gg_http_request_free(request);
+        gg_http_response_free(response);
     }
 
-    GString *send_buf = marshall_response(response);
-    printf("%s", send_buf->str);
-
-    send(client_fd, send_buf->str, send_buf->len, 0);
-
-    g_string_free(send_buf, TRUE);
-    gg_http_request_free(request);
-    gg_http_response_free(response);
 }
 
 static void server_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
@@ -145,6 +166,7 @@ static void server_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
 
         ClientEvContext *client_ev_context = (ClientEvContext*) malloc(sizeof(ClientEvContext));
         client_ev_context->app = server->app;
+        client_ev_context->read_buffer = g_string_sized_new(1024);
         ev_io *client_io_watcher = (ev_io*) &client_ev_context->watcher;
 
         set_non_blocking(client_fd);
@@ -186,6 +208,11 @@ int gg_server_app (RouteEntry *routes, gchar *port) {
     app.routes = routes;
 
     int server_fd = create_socket_and_bind(port);
+
+    if (server_fd == -1) {
+        printf("Could not start server on port %s.\n", port);
+        return -1;
+    }
 
     listen(server_fd, MAX_QUEUE);
     printf("Glassgow started on port %s.\n", port);

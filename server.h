@@ -15,4 +15,7 @@ typedef struct RouteEntry {
 
 int gg_server_app (RouteEntry *routes, gchar *port);
 
+//Terminator for route definition arrays
+#define ROUTES_END {NULL, NULL}
+
 #endif

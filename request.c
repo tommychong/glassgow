@@ -40,7 +40,7 @@ int parse_http_request(char *data, GGHttpRequest *request) {
 
     //Headers
 
-    for(int i =1 ; i<g_strv_length (lines); i++){
+    for(int i = 1; i < g_strv_length (lines); i++){
         if (strlen(lines[i]) > 0) {
             gchar **header = g_strsplit(lines[i], ": ", 0);
             set_header(request, header[0], header[1]);

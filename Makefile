@@ -1,6 +1,6 @@
 CC = clang
-CFLAGS = $(shell pkg-config --cflags glib-2.0)
-LDLIBS = $(shell pkg-config --libs glib-2.0)
+CFLAGS = $(shell pkg-config --cflags glib-2.0) -I/usr/local/include
+LDLIBS = $(shell pkg-config --libs glib-2.0) -lev -L/usr/local/lib
 
 OBJECTS = request.o response.o server.o app.o
 

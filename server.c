@@ -16,11 +16,31 @@
 #define MAX_QUEUE 20
 #define RECEIVE_BUFFER_SIZE 4096
 
-GString* marshall_response (GGHttpResponse *response){
+typedef struct GGAppContext {
+    gchar *static_file_path;
+    RouteEntry *routes;
+} GGAppContext;
+
+/*
+ * there isn't a way to pass context to libev callbacks, which only pass the watcher,
+ * so we wrap the watcher with context
+ */
+
+typedef struct ServerEvContext {
+    ev_io watcher;
+    GGAppContext *app;
+} ServerEvContext;
+
+typedef struct ClientEvContext{
+    ev_io watcher;
+    GGAppContext *app;
+} ClientEvContext;
+
+static inline GString* marshall_response (GGHttpResponse *response){
     //TODO: what's the best default allocation size for the string?
     GString *response_string = g_string_sized_new(1024);
     
-    g_string_append_printf (response_string, "HTTP/1.0 %d %s\r\n", response->status, gg_status_code_to_message(response->status));
+    g_string_append_printf (response_string, "HTTP/1.1 %d %s\r\n", response->status, gg_status_code_to_message(response->status));
 
     if (!gg_get_response_header(response, "Content-Length")) {
         int msg_len = response->body->len;
@@ -42,30 +62,30 @@ GString* marshall_response (GGHttpResponse *response){
     return response_string;
 }
 
-RouteEntry *routes;
+static inline int set_non_blocking(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
 
-ev_io server_io_watcher;
-
-int set_non_blocking(int fd)
-{
-    int flags;
-
-    if (-1 == (flags = fcntl(fd, F_GETFL, 0))) {
+    if (flags == -1) {
         flags = 0;
     }
+
     return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }     
 
-static void client_cb(EV_P_ ev_io *w, int revents) {
-    int client_fd = w->fd;
+static void client_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
+    ClientEvContext *client = (ClientEvContext*) watcher;
+    GGAppContext *app = client->app;
 
-    printf("I AM IN THE CLIENT CB\n");
+    int client_fd = watcher->fd;
+
     char buf[RECEIVE_BUFFER_SIZE];
 
-    int recv_size = recv(w->fd, buf, RECEIVE_BUFFER_SIZE-1, 0);
+    int recv_size = recv(client_fd, buf, RECEIVE_BUFFER_SIZE-1, 0);
 
     if (recv_size == 0) {
-        ev_io_stop(EV_A_ w);
+        ev_io_stop(loop, watcher);
+        shutdown(client_fd, 2);
+        free(watcher);
         return;
     } else if (recv_size < 0) {
         printf("Error! Could not receive packet from port\n");
@@ -82,12 +102,11 @@ static void client_cb(EV_P_ ev_io *w, int revents) {
     response->status = 200;
 
     gboolean handled = FALSE;
-    for (RouteEntry *route = routes; !handled && route->route_pattern != NULL; route++) {
+    for (RouteEntry *route = app->routes; !handled && route->route_pattern != NULL; route++) {
         //TODO: pre-compile the regexes before we start serving
         GRegex *route_regex;
         route_regex = g_regex_new(route->route_pattern, 0, 0, NULL);
         GMatchInfo *match_info;
-        //printf("dodeting %s\n", route->route_pattern);
 
         if(g_regex_match(route_regex, request->uri, 0, &match_info)){
             gchar *matched_segment = g_match_info_fetch(match_info ,1);
@@ -113,17 +132,21 @@ static void client_cb(EV_P_ ev_io *w, int revents) {
     gg_http_response_free(response);
 }
 
-static void server_cb(struct ev_loop *loop, ev_io *w, int revents) {
-    printf("Hey server got stuff~\n");
+static void server_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
+    ServerEvContext *server = (ServerEvContext*) watcher;
+
     while(1) {
-        int client_fd = accept(w->fd, NULL, NULL);
-        printf("Accept! %d\n", client_fd);
+        int client_fd = accept(watcher->fd, NULL, NULL);
+        printf("Accept %d!\n", client_fd);
         
         if(client_fd < 0){
             break;
         }
 
-        ev_io *client_io_watcher = (ev_io*) malloc(sizeof(ev_io));
+        ClientEvContext *client_ev_context = (ClientEvContext*) malloc(sizeof(ClientEvContext));
+        client_ev_context->app = server->app;
+        ev_io *client_io_watcher = (ev_io*) &client_ev_context->watcher;
+
         set_non_blocking(client_fd);
 
         ev_io_init(client_io_watcher, client_cb, client_fd, EV_READ);
@@ -131,11 +154,9 @@ static void server_cb(struct ev_loop *loop, ev_io *w, int revents) {
     }
 }
 
-int gg_server_app (RouteEntry *routez, gchar *port) {
-    routes = routez;
-    struct sockaddr_storage client_addr;
+int create_socket_and_bind(gchar *port) {
     struct addrinfo hints, *res;
-    int s_fd = 0;
+    int server_fd;
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC;
@@ -145,24 +166,38 @@ int gg_server_app (RouteEntry *routez, gchar *port) {
     //Check for error
     getaddrinfo(NULL, port, &hints, &res);
 
-    s_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    server_fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
-    set_non_blocking(s_fd);
+    set_non_blocking(server_fd);
 
-    int stat = bind(s_fd, res->ai_addr, res->ai_addrlen);
+    int stat = bind(server_fd, res->ai_addr, res->ai_addrlen);
 
     if (stat != 0) {
         printf("ERROR! Cannot bind to address\n");
         return -1;
     }
 
-    listen(s_fd, MAX_QUEUE);
+    return server_fd;
+}
+
+int gg_server_app (RouteEntry *routes, gchar *port) {
+    GGAppContext app;
+    app.static_file_path = "static/";
+    app.routes = routes;
+
+    int server_fd = create_socket_and_bind(port);
+
+    listen(server_fd, MAX_QUEUE);
     printf("Glassgow started on port %s.\n", port);
 
     struct ev_loop *loop = EV_DEFAULT;
 
-    ev_io_init (&server_io_watcher, server_cb, s_fd, EV_READ);
-    ev_io_start (loop, &server_io_watcher);
+    ServerEvContext server_ev_context;
+    server_ev_context.app = &app;
+    ev_io *server_io_watcher = (ev_io*) &server_ev_context.watcher;
+
+    ev_io_init (server_io_watcher, server_cb, server_fd, EV_READ);
+    ev_io_start (loop, server_io_watcher);
 
     ev_run (loop, 0);
 

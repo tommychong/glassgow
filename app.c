@@ -32,8 +32,6 @@ void gg_file_handler(GGHttpResponse* response, gchar *segment){
 
     file_size = get_file_length(file);
 
-    printf("File SIZE: %lu\n", file_size);
-
     buffer = (char*) malloc(file_size+1); //TODO: create a gg_malloc function that cleans up after response done
 
     fread(buffer, file_size, 1, file);

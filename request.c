@@ -3,18 +3,18 @@
 #include <string.h>
 #include <stdlib.h>
 
-void set_header(ggHttpRequest *request, gchar *key, gchar *value) {
+void set_header(GGHttpRequest *request, gchar *key, gchar *value) {
     g_hash_table_insert(request->headers, key, value);
 }
 
-ggHttpRequest* gg_http_request_new() {
-    ggHttpRequest *request = malloc(sizeof(ggHttpRequest));
+GGHttpRequest* gg_http_request_new() {
+    GGHttpRequest *request = malloc(sizeof(GGHttpRequest));
     request->headers = g_hash_table_new(g_str_hash, g_str_equal);
 
     return request;
 }
 
-void gg_http_request_free(ggHttpRequest *request) {
+void gg_http_request_free(GGHttpRequest *request) {
     g_hash_table_destroy(request->headers);
     //g_string_free(request->body, TRUE);
     g_free(request->method);
@@ -22,7 +22,7 @@ void gg_http_request_free(ggHttpRequest *request) {
     free(request);
 }
 
-int parse_http_request(char *data, ggHttpRequest *request) {
+int parse_http_request(char *data, GGHttpRequest *request) {
     gchar **lines = g_strsplit(data, "\r\n", 0);
 
     //Request-Line   = Method SP Request-URI SP HTTP-Version CRLF

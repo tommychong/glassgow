@@ -17,7 +17,7 @@ unsigned long get_file_length (FILE *file){
     return length;
 }
 
-void gg_file_handler(ggHttpResponse* response, gchar *segment){
+void gg_file_handler(GGHttpResponse* response, gchar *segment){
     FILE *file;
     char *buffer;
     unsigned long file_size;
@@ -54,7 +54,7 @@ void gg_file_handler(ggHttpResponse* response, gchar *segment){
     free(buffer);
 }
 
-void gg_null_handler(ggHttpResponse* response, gchar *segment){ //TODO: there has to be a nicer way to do this... printf style optional args?
+void gg_null_handler(GGHttpResponse* response, gchar *segment){ //TODO: there has to be a nicer way to do this... printf style optional args?
     static const char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination Extreme edition</body></html>";
     gg_write(response, (char*) thug);
 }

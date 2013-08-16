@@ -3,20 +3,20 @@
 
 #include <glib.h>
 
-typedef struct ggHttpRequest  {
+typedef struct GGHttpRequest  {
     char* method;
     char* uri;
     GString *body;
     gint body_len;
     GHashTable* headers;
-} ggHttpRequest;
+} GGHttpRequest;
 
-void set_header(ggHttpRequest *request, gchar *key, gchar *value);
+void set_header(GGHttpRequest *request, gchar *key, gchar *value);
 
-ggHttpRequest* gg_http_request_new();
+GGHttpRequest* gg_http_request_new();
 
-void gg_http_request_free(ggHttpRequest *request);
+void gg_http_request_free(GGHttpRequest *request);
 
-int parse_http_request(char *data, ggHttpRequest *request);
+int parse_http_request(char *data, GGHttpRequest *request);
 
 #endif

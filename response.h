@@ -3,26 +3,26 @@
 
 #include <glib.h>
 
-typedef struct ggHttpResponse {
+typedef struct GGHttpResponse {
     unsigned int status;
     GString *body;
     GHashTable* headers;
-} ggHttpResponse;
+} GGHttpResponse;
 
 gchar* gg_status_code_to_message (guint status);
 
-void gg_write (ggHttpResponse *response, char *chunk);
+void gg_write (GGHttpResponse *response, char *chunk);
 
-void gg_write_len (ggHttpResponse *response, char *chunk, guint len);
+void gg_write_len (GGHttpResponse *response, char *chunk, guint len);
 
-gchar* gg_get_response_header(ggHttpResponse *response, gchar *key);
+gchar* gg_get_response_header(GGHttpResponse *response, gchar *key);
 
-void gg_set_response_header(ggHttpResponse *response, gchar *key, gchar *value);
+void gg_set_response_header(GGHttpResponse *response, gchar *key, gchar *value);
 
-void gg_set_response_header_num(ggHttpResponse *response, gchar *key, gint value);
+void gg_set_response_header_num(GGHttpResponse *response, gchar *key, gint value);
 
-ggHttpResponse* gg_http_response_new();
+GGHttpResponse* gg_http_response_new();
 
-void gg_http_response_free(ggHttpResponse *response);
+void gg_http_response_free(GGHttpResponse *response);
 
 #endif

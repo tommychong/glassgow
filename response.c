@@ -14,30 +14,30 @@ gchar* gg_status_code_to_message (guint status) {
     }
 }
 
-void gg_write (ggHttpResponse *response, char *chunk) {
+void gg_write (GGHttpResponse *response, char *chunk) {
     g_string_append(response->body, chunk);
 }
 
-void gg_write_len (ggHttpResponse *response, char *chunk, guint len) {
+void gg_write_len (GGHttpResponse *response, char *chunk, guint len) {
     g_string_append_len(response->body, chunk, len);
 }
 
-gchar* gg_get_response_header(ggHttpResponse *response, gchar *key) {
+gchar* gg_get_response_header(GGHttpResponse *response, gchar *key) {
     return (gchar *) g_hash_table_lookup(response->headers, key);
 }
 
-void gg_set_response_header(ggHttpResponse *response, gchar *key, gchar *value) {
+void gg_set_response_header(GGHttpResponse *response, gchar *key, gchar *value) {
     g_hash_table_insert(response->headers, g_strdup(key), g_strdup(value));
 }
 
-void gg_set_response_header_num(ggHttpResponse *response, gchar *key, gint value) {
+void gg_set_response_header_num(GGHttpResponse *response, gchar *key, gint value) {
     gchar *value_string = (gchar*) malloc(64);
     g_ascii_dtostr(value_string, 64, value);
     g_hash_table_insert(response->headers, g_strdup(key), value_string);
 }
 
-ggHttpResponse* gg_http_response_new() {
-    ggHttpResponse *response = malloc(sizeof(ggHttpResponse));
+GGHttpResponse* gg_http_response_new() {
+    GGHttpResponse *response = malloc(sizeof(GGHttpResponse));
     response->headers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
     gg_set_response_header(response, "Server", "Glassgow/pre-alpha");
     //gg_set_response_header(response, "Connection", "keep-alive");
@@ -48,7 +48,7 @@ ggHttpResponse* gg_http_response_new() {
     return response;
 }
 
-void gg_http_response_free(ggHttpResponse *response) {
+void gg_http_response_free(GGHttpResponse *response) {
     g_hash_table_destroy(response->headers);
     g_string_free(response->body, TRUE);
     free(response);

@@ -13,7 +13,7 @@
 #define MAX_QUEUE 20
 #define RECEIVE_BUFFER_SIZE 4096
 
-GString* marshall_response (ggHttpResponse *response){
+GString* marshall_response (GGHttpResponse *response){
     //TODO: what's the best default allocation size for the string?
     GString *response_string = g_string_sized_new(1024);
     
@@ -78,10 +78,10 @@ int gg_server_app (RouteEntry *routes, gchar *port) {
         buf[recv_size] = '\0';
         printf("Got msg\r\nsize:%d\r\n%s\r\n", recv_size, buf);
 
-        ggHttpRequest *request = gg_http_request_new();
+        GGHttpRequest *request = gg_http_request_new();
         parse_http_request(buf, request);
 
-        ggHttpResponse *response = gg_http_response_new();
+        GGHttpResponse *response = gg_http_response_new();
         response->status = 200;
 
         gboolean handled = FALSE;

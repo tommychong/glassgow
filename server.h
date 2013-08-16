@@ -10,7 +10,7 @@ typedef enum {HTTP_1_0, HTTP_1_1} http_version;
 
 typedef struct RouteEntry {
     char* route_pattern;
-    void (*handler)(ggHttpResponse*, gchar*);
+    void (*handler)(GGHttpResponse*, gchar*);
 } RouteEntry;
 
 int gg_server_app (RouteEntry *routes, gchar *port);

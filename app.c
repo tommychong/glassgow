@@ -17,7 +17,7 @@ unsigned long get_file_length (FILE *file){
     return length;
 }
 
-void gg_file_handler(GGHttpResponse* response, gchar *segment){
+void gg_file_handler(GGHttpRequest* request, GGHttpResponse* response, gchar *segment){
     FILE *file;
     char *buffer;
     unsigned long file_size;
@@ -25,7 +25,7 @@ void gg_file_handler(GGHttpResponse* response, gchar *segment){
     //Check if you can access with access() and also 404/500 on read error
     file = fopen(segment, "rb");
 
-    //TODO: check if its a directory, if its a directory...
+    //TODO: check if its a directory, and if its a directory...
     if(!file) {
         gg_write(response, "No resource here homie.");
         response->status = 404;
@@ -55,24 +55,38 @@ void gg_file_handler(GGHttpResponse* response, gchar *segment){
     GChecksum *checksum = g_checksum_new(G_CHECKSUM_SHA1);
     g_checksum_update (checksum, (guchar*) buffer, file_size);
 
-    char checksum_string [64];
+    gchar checksum_string [64];
     sprintf(checksum_string, "\"%s\"", g_checksum_get_string(checksum));
     gg_set_response_header(response, "ETag", checksum_string);
 
     g_checksum_free(checksum);
 
-    gg_write_len(response, buffer, file_size);
+    gchar *if_none_match = gg_get_request_header(request, "If-None-Match");
+    //printf("SUPGIRL:%s\n",if_none_match);
 
+    if (if_none_match && strcmp(if_none_match, checksum_string) == 0){
+        response->status = 304;
+    } else {
+        gg_write_len(response, buffer, file_size);
+    }
+
+    printf("Serving hot n fresh: %s\n", segment);
     free(buffer);
 }
 
-void gg_null_handler(GGHttpResponse* response, gchar *segment){ //TODO: there has to be a nicer way to do this... printf style optional args?
+void gg_swag_handler(GGHttpRequest* request, GGHttpResponse* response, gchar *segment){
+    static const char* thug = "<html><head><style>body { font-family: Arial; background-color: #FFE; }</style></head><body>Swaggamuffin</body></html>";
+    gg_write(response, (char*) thug);
+}
+
+void gg_null_handler(GGHttpRequest* request, GGHttpResponse* response, gchar *segment){ //TODO: there has to be a nicer way to do this... printf style optional args?
     static const char* thug = "<html><head><style>body { font-family: Arial; background-color: #EFF; }</style></head><body>Thugination Extreme edition</body></html>";
     gg_write(response, (char*) thug);
 }
 
 int main(int argc, char *argv[]) {
     RouteEntry routes[] = {
+                {"/swag/", gg_swag_handler},
                 {"/(.+)", gg_file_handler},
                 {"/", gg_null_handler},
                 ROUTES_END

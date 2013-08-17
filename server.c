@@ -131,7 +131,7 @@ static void client_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
                 gchar *matched_segment = g_match_info_fetch(match_info ,1);
                 printf("Serving up handler for %s\n", route->route_pattern);
 
-                route->handler(response, matched_segment);
+                route->handler(request, response, matched_segment);
 
                 g_free(matched_segment);
                 handled = TRUE;

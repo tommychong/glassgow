@@ -2,9 +2,14 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+
+gchar* gg_get_request_header(GGHttpRequest *request, gchar *key) {
+    return g_hash_table_lookup(request->headers, key);
+}
 
 void set_header(GGHttpRequest *request, gchar *key, gchar *value) {
-    g_hash_table_insert(request->headers, key, value);
+    g_hash_table_insert(request->headers, g_strdup(key), g_strdup(value));
 }
 
 GGHttpRequest* gg_http_request_new() {
@@ -27,6 +32,7 @@ int parse_http_request(char *data, GGHttpRequest *request) {
 
     //Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
     gchar **request_line = g_strsplit(lines[0], " ", 0);
+    printf("Req:%s\n",lines[0]);
 
     if (g_strv_length (request_line) != 3 || !g_str_has_prefix(request_line[2], "HTTP/")){
         g_strfreev(request_line);
@@ -43,6 +49,7 @@ int parse_http_request(char *data, GGHttpRequest *request) {
     for(int i = 1; i < g_strv_length (lines); i++){
         if (strlen(lines[i]) > 0) {
             gchar **header = g_strsplit(lines[i], ": ", 0);
+            //printf("SETTING HEADERS \"%s\":\"%s\"", header[0], header[1]);
             set_header(request, header[0], header[1]);
             g_strfreev(header);
         }

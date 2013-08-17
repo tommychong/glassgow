@@ -5,6 +5,8 @@ gchar* gg_status_code_to_message (guint status) {
     switch (status) {
         case 200:
             return "OK";
+        case 304:
+            return "Not Modified";
         case 404:
             return "Not Found";
         case 500:

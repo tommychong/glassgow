@@ -11,7 +11,10 @@ typedef struct GGHttpRequest  {
     GHashTable* headers;
 } GGHttpRequest;
 
+gchar* gg_get_request_header(GGHttpRequest *request, gchar *key);
+
 void set_header(GGHttpRequest *request, gchar *key, gchar *value);
+
 
 GGHttpRequest* gg_http_request_new();
 

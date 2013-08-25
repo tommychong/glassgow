@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <time.h>
+
 unsigned long get_file_length (FILE *file){
     unsigned long length;
 
@@ -62,7 +64,6 @@ void gg_file_handler(GGHttpRequest* request, GGHttpResponse* response, gchar *se
     g_checksum_free(checksum);
 
     gchar *if_none_match = gg_get_request_header(request, "If-None-Match");
-    //printf("SUPGIRL:%s\n",if_none_match);
 
     if (if_none_match && strcmp(if_none_match, checksum_string) == 0){
         response->status = 304;
@@ -71,6 +72,7 @@ void gg_file_handler(GGHttpRequest* request, GGHttpResponse* response, gchar *se
     }
 
     printf("Serving hot n fresh: %s\n", segment);
+
     free(buffer);
 }
 

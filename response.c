@@ -1,6 +1,8 @@
 #include "response.h"
 #include <stdlib.h>
 
+#include <time.h>
+
 gchar* gg_status_code_to_message (guint status) {
     switch (status) {
         case 200:
@@ -41,11 +43,22 @@ void gg_set_response_header_num(GGHttpResponse *response, gchar *key, gint value
 GGHttpResponse* gg_http_response_new() {
     GGHttpResponse *response = malloc(sizeof(GGHttpResponse));
     response->headers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-    gg_set_response_header(response, "Server", "Glassgow/pre-alpha");
     //gg_set_response_header(response, "Connection", "keep-alive");
 
     //TODO: what's the best default allocation size for buffer?
     response->body = g_string_sized_new(1024);
+
+    gg_set_response_header(response, "Server", "Glassgow/pre-alpha");
+
+
+    time_t cur_time;
+    char buf [80];
+    struct tm * time_data;
+    time(&cur_time);
+    time_data = gmtime(&cur_time);
+
+    strftime(buf, 80, "%a, %d %b %y %T GMT", time_data);
+    gg_set_response_header(response, "Date", buf);
 
     return response;
 }

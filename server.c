@@ -129,7 +129,7 @@ static void client_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
             route_regex = g_regex_new(route->route_pattern, 0, 0, NULL);
             GMatchInfo *match_info;
 
-            if(g_regex_match(route_regex, request->uri, 0, &match_info)){
+            if(g_regex_match(route_regex, request->path, 0, &match_info)){
                 gchar *matched_segment = g_match_info_fetch(match_info ,1);
                 printf("Serving up handler for %s\n", route->route_pattern);
 

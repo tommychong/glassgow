@@ -4,11 +4,12 @@
 #include <glib.h>
 
 typedef struct GGHttpRequest  {
-    char* method;
-    char* uri;
+    char *method;
+    char *path;
+    char *query;
     GString *body;
     gint body_len;
-    GHashTable* headers;
+    GHashTable *headers;
 } GGHttpRequest;
 
 gchar* gg_get_request_header(GGHttpRequest *request, gchar *key);

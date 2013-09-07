@@ -23,7 +23,12 @@ void gg_http_request_free(GGHttpRequest *request) {
     g_hash_table_destroy(request->headers);
     //g_string_free(request->body, TRUE);
     g_free(request->method);
-    g_free(request->uri);
+    g_free(request->path);
+
+    if (request->query) {
+        g_free(request->query);
+    }
+
     free(request);
 }
 
@@ -41,7 +46,23 @@ int parse_http_request(char *data, GGHttpRequest *request) {
     }
 
     request->method = g_strdup(request_line[0]);
-    request->uri = g_strdup(request_line[1]);
+
+    //RFC 3986:
+    //"The query component is indicated by the first question
+    //   mark ("?") character and terminated by a number sign ("#") character
+    //      or by the end of the URI."
+    char *uri = request_line[1];
+    char *question_mark = strchr(uri,'?');
+    //char *number_sign = strchr(request_line[1],'#');
+
+    if (question_mark) {
+        request->path = strndup(uri, question_mark-uri);
+        request->query = g_strdup (question_mark);
+    } else {
+        request->path = g_strdup(uri);
+        request->query = NULL;
+    }
+
     g_strfreev(request_line);
 
     //Headers
@@ -49,7 +70,6 @@ int parse_http_request(char *data, GGHttpRequest *request) {
     for(int i = 1; i < g_strv_length (lines); i++){
         if (strlen(lines[i]) > 0) {
             gchar **header = g_strsplit(lines[i], ": ", 0);
-            //printf("SETTING HEADERS \"%s\":\"%s\"", header[0], header[1]);
             set_header(request, header[0], header[1]);
             g_strfreev(header);
         }
